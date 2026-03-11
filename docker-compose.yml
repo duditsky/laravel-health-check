@@ -1,0 +1,68 @@
+version: '3.8'
+services:
+  nginx:
+    image: nginx:latest
+    restart: always
+    volumes:
+      - ./:/var/www/
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    ports:
+      - "8876:80" 
+    depends_on:
+      - app
+    container_name: TestTask_nginx
+    networks:
+      - test-task-net
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/dockerfile
+    restart: always  
+    volumes:
+      - ./:/var/www/
+    container_name: TestTask_php
+    networks:
+      - test-task-net
+    depends_on:
+      - db
+      - redis  
+  db:
+      image: mysql:latest
+      restart: always
+      volumes:
+        - ./tmp/db:/var/lib/mysql
+      environment:
+        MYSQL_DATABASE: LaravelTestTask
+        MYSQL_ROOT_PASSWORD: root
+      ports:
+        - 33061:3306
+      command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci
+      container_name: TestTask_db
+      networks:
+      - test-task-net
+  redis:
+    image: redis:alpine
+    ports:
+    - "6379:6379"
+    restart: always
+    container_name: TestTask_redis
+    networks:
+      - test-task-net
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    environment: 
+      PMA_HOST: db
+      PMA_PORT: 3306
+    depends_on:
+      - db
+    ports:
+      - 3001:80
+    container_name: TestTask_phpmyadmin
+    networks:
+      - test-task-net
+   
+networks:
+  test-task-net:
+    driver: bridge      
+    
